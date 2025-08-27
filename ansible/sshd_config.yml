@@ -1,0 +1,26 @@
+- name: Configure sshd
+  hosts: "*"
+  remote_user: root
+
+  tasks:
+    - name: Copy sshd_config config file
+      ansible.builtin.copy:
+        src: ../configs/sshd_config
+        dest: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Copy host public key file
+      ansible.builtin.copy:
+        src: /home/lancseszterr/.ssh/id_ed25519.pub
+        dest: /root/.ssh/authorized_keys
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Restart the openssh-server
+      ansible.builtin.systemd_service:
+        state: restarted
+        daemon_reload: true
+        name: ssh.service

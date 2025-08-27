@@ -1,0 +1,346 @@
+- name: Configure sshd
+  hosts: "*"
+  remote_user: root
+
+  tasks:
+    # Config files
+    # - name: filesystem modprobe files, to disable unnecessary filesystems
+    #   ansible.builtin.copy:
+    #     src: ../configs/etc/modprobe.d/
+    #     dest: /etc/modprobe.d/
+    #     owner: root
+    #     group: root
+    #     mode: "0600"
+
+    # - name: sshd_config config file
+    #   ansible.builtin.copy:
+    #     src: ../configs/etc/ssh/sshd_config
+    #     dest: /etc/ssh/sshd_config
+    #     owner: root
+    #     group: root
+    #     mode: "0600"
+
+    # - name: timesyncd config file
+    #   ansible.builtin.copy:
+    #     src: ../configs/etc/systemd/timesyncd.conf
+    #     dest: /etc/systemd/timesyncd.conf
+    #     owner: root
+    #     group: root
+    #     mode: "0600"
+
+    # - name: sudoers config file
+    #   ansible.builtin.copy:
+    #     src: ../configs/etc/sudoers
+    #     dest: /etc/sudoers
+    #     owner: root
+    #     group: root
+    #     mode: "0600"
+    #     backup: yes
+
+    # - name: journald config
+    #   ansible.builtin.copy:
+    #     src: ../configs/etc/systemd/journald.conf
+    #     dest: /etc/systemd/journald.conf
+    #     owner: root
+    #     group: root
+    #     mode: "0600"
+
+    # - name: grub config
+    #   ansible.builtin.copy:
+    #     src: ../configs/etc/default/grub
+    #     dest: /etc/default/grub
+    #     owner: root
+    #     group: root
+    #     mode: "0600"
+    #     backup: yes
+
+    # - name: ufw after.rules config
+    #   ansible.builtin.copy:
+    #     src: ../configs/etc/ufw/after.rules
+    #     dest: /etc/ufw/after.rules
+    #     owner: root
+    #     group: root
+    #     mode: "0600"
+
+    - name: All config files
+      ansible.builtin.copy:
+        src: ../configs/etc/
+        dest: /etc/
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Pam config
+      ansible.builtin.copy:
+        sec: ../configs/usr/share/pam-configs/
+        dst: /usr/share/pam-configs/
+        owner: root
+        group: root
+        mode: "0600"
+
+    # Services and packages
+    - name: Delete unnecessary packages
+      ansible.builtin.apt:
+        name:
+          - autofs
+          - avahi-daemon
+          - isc-dhcp-server
+          - bind9
+          - dnsmasq
+          - vsftpd
+          - slapd
+          - dovecot-imapd
+          - dovecot-pop3d
+          - nfs-kernel-server
+          - ypserv
+          - cups
+          - rpcbind
+          - rsync
+          - samba
+          - snmpd
+          - tftpd-hpa
+          - squid
+          - apache2
+          - nginx
+          - xinetd
+          - nis
+          - rsh-client
+          - talk
+          - telnet
+          - inetutils-telnet
+          - ldap-utils
+          - ftp
+          - tnftp
+          - bluez
+          - iptables-persistent
+        state: absent
+
+    - name: Update
+      ansible.builtin.apt:
+        name: "*"
+        state: latest
+        update_cache: yes
+
+    - name: Install packages
+      ansible.builtin.apt:
+        name:
+          - ufw
+          - apparmor
+          - apparmor-utils
+
+    # UFW
+    - name: Deny default incoming
+      community.general.ufw:
+        state: enabled
+        default: deny
+        direction: incoming
+        policy: deny
+
+    - name: Deny default outgoing
+      community.general.ufw:
+        state: enabled
+        default: deny
+        direction: outgoing
+        policy: deny
+
+    - name: Allow ssh port
+      community.general.ufw:
+        direction: in
+        interface: ens18
+        rule: allow
+        port: 16902
+        proto: tcp
+        comment: Allow ssh
+
+    - name: Allow out https
+      community.general.ufw:
+        direction: out
+        interface: ens18
+        rule: allow
+        port: 443
+        proto: tcp
+        comment: Allow HTTPS
+
+    - name: Allow out dns
+      community.general.ufw:
+        direction: out
+        interface: ens18
+        rule: allow
+        port: 53
+        proto: tcp
+        comment: Allow DNS
+
+    # Apparmor
+    - name: Apparmor enfrorce
+      ansible.builtin.command: aa-enforce /etc/apparmor.d/*
+
+    # File permissions
+    - name: /boot/grub/grub.cfg
+      ansible.builtin.file:
+        path: /boot/grub/grub.cfg
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: /etc/crontab
+      ansible.builtin.file:
+        path: /etc/crontab
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: /etc/cron.hourly/
+      ansible.builtin.file:
+        path: /etc/cron.hourly/
+        owner: root
+        group: root
+        mode: "0600"
+        recurse: yes
+
+    - name: /etc/cron.daily/
+      ansible.builtin.file:
+        path: /etc/cron.daily/
+        owner: root
+        group: root
+        mode: "0600"
+        recurse: yes
+
+    - name: /etc/cron.weekly/
+      ansible.builtin.file:
+        path: /etc/cron.weekly/
+        owner: root
+        group: root
+        mode: "0600"
+        recurse: yes
+
+    - name: /etc/cron.monthly/
+      ansible.builtin.file:
+        path: /etc/cron.monthly/
+        owner: root
+        group: root
+        mode: "0600"
+        recurse: yes
+
+    - name: /etc/cron.d/
+      ansible.builtin.file:
+        path: /etc/cron.d/
+        owner: root
+        group: root
+        mode: "0600"
+        recurse: yes
+
+    - name: /etc/cron.allow
+      ansible.builtin.file:
+        path: /etc/cron.allow
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: /etc/cron.deny
+      ansible.builtin.file:
+        path: /etc/cron.deny
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: /etc/at.allow
+      ansible.builtin.file:
+        path: /etc/at.allow
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: /etc/at.deny
+      ansible.builtin.file:
+        path: /etc/at.deny
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: /etc/passwd
+      ansible.builtin.file:
+        path: /etc/passwd
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: /etc/passwd-
+      ansible.builtin.file:
+        path: /etc/passwd-
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: /etc/group
+      ansible.builtin.file:
+        path: /etc/group
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: /etc/group-
+      ansible.builtin.file:
+        path: /etc/group-
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: /etc/shadow
+      ansible.builtin.file:
+        path: /etc/shadow
+        owner: root
+        group: root
+        mode: "0640"
+
+    - name: /etc/shadow-
+      ansible.builtin.file:
+        path: /etc/shadow-
+        owner: root
+        group: root
+        mode: "0640"
+
+    - name: /etc/gshadow
+      ansible.builtin.file:
+        path: /etc/gshadow
+        owner: root
+        group: root
+        mode: "0640"
+
+    - name: /etc/gshadow-
+      ansible.builtin.file:
+        path: /etc/gshadow-
+        owner: root
+        group: root
+        mode: "0640"
+
+    - name: /etc/shells
+      ansible.builtin.file:
+        path: /etc/shells
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: /etc/security/opasswd
+      ansible.builtin.file:
+        path: /etc/security/opasswd
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: /etc/security/opasswd.old
+      ansible.builtin.file:
+        path: /etc/security/opasswd.old
+        owner: root
+        group: root
+        mode: "0600"
+
+    # PAM
+    - name: enable pam faillock
+      ansible.builtin.copmmand: pam-auth-update --enable faillock
+
+    - name: enable pam faillock_notify
+      ansible.builtin.copmmand: pam-auth-update --enable faillock_notify
+
+    # Reboot
+    - name: reboot
+      ansible.builtin.reboot:
