@@ -1,3 +1,3 @@
 Golem
 ---
-These are not professionally made configs, scripts, etc... These are just what I use for my Homelab.
+These are not professionally made configs, playbooks, etc... These are just what I use for my Homelab.
